@@ -5,18 +5,13 @@
       <v-spacer />
     </v-app-bar>
     <v-main>
-      <message-table />
+      <router-view />
     </v-main>
   </v-app>
 </template>
 
 <script>
-import MessageTable from './components/MessageTable.vue';
-
 export default {
   name: 'App',
-  components: {
-    MessageTable,
-  },
 };
 </script>

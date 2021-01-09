@@ -1,4 +1,3 @@
-
 const createDefaultState = () => {
   return {
     messages: []
@@ -8,12 +7,12 @@ const createDefaultState = () => {
 const state = createDefaultState();
 
 const getters = {
-  messages: state => state.messages,
+  messages: state => state.messages
 };
 
 const actions = {
   addMessage({ commit }, message) {
-    commit('addMessage', message);
+    commit("addMessage", message);
   }
 };
 
@@ -28,4 +27,4 @@ export default {
   getters,
   actions,
   mutations
-}
+};
