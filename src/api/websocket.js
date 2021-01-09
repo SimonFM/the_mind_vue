@@ -6,7 +6,7 @@ export default {
   socket: null,
   getInstance() {
     if (!this.instance || !this.socket) {
-      this.socket = new SockJS('http://127.0.0.1:9999/mindfulness/ws');
+      this.socket = new SockJS(`${process.env.VUE_APP_MIND_SERVER_URL}/ws`);
       this.instance = Stomp.over(this.socket);
     }
     return this.instance;

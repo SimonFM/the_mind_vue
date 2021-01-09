@@ -2,46 +2,77 @@
   <v-container>
     <v-row class="mt-3">
       <v-col>
-        <span id="user">{{ `User: ${username}` }}</span>
+        <span id="user" class="text-h6">{{ `User: ${username}` }}</span>
       </v-col>
       <v-col>
-        <span id="room-name">{{ `Game: ${gameCode}` }}</span>
+        <span id="room-name" class="text-h6">{{ `Game: ${gameCode}` }}</span>
+      </v-col>
+      <v-col v-if="currentGame && currentGame.currentLevel > -1">
+        <span id="current-level" class="text-h6">{{
+          `Level ${currentGame.currentLevel}`
+        }}</span>
       </v-col>
     </v-row>
-    <v-row v-if="connected && currentGame && currentGame.started" class="mt-3">
-      <v-col>
-        <span id="lives">{{ `Lives: ${lives}` }}</span>
-      </v-col>
-      <v-col>
-        <span id="ninja-stars">{{ `Ninja stars: ${ninjaStars}` }}</span>
-      </v-col>
-    </v-row>
+    <div v-if="connected && currentGame && currentGame.started">
+      <v-row class="mt-3">
+        <v-col>
+          <span id="lives">{{ `Lives: ${lives}` }}</span>
+        </v-col>
+        <v-col>
+          <span id="ninja-stars">{{ `Ninja stars: ${ninjaStars}` }}</span>
+        </v-col>
+      </v-row>
+      <v-row>
+        <span class="text-h5">{{ 'Played Cards' }}</span>
+      </v-row>
+      <v-row class="mt-3">
+        <v-col />
+        <v-col>
+          <v-card outlined width="100px" height="150px">
+            <v-card-title
+              >{{
+                currentGame.playedCards && currentGame.playedCards.length > 0
+                  ? currentGame.playedCards[currentGame.playedCards.length - 1]
+                  : 'EMPTY'
+              }}
+            </v-card-title>
+          </v-card>
+        </v-col>
+        <v-col />
+      </v-row>
+    </div>
     <v-row v-if="connected && currentGame && currentGame.started">
-      <div v-if="!currentPlayer.hand">
-        <span>{{ 'You have an empty hand' }}</span>
-      </div>
-      <v-col v-else v-for="card of currentPlayer.hand" :key="card">
-        <v-card outlined max-width="10%">
-          <v-card-title>{{ card }}</v-card-title>
-          <v-card-actions>
-            <v-spacer />
-            <v-btn outlined rounded text @click="play(card)">
-              {{ 'Play' }}
-            </v-btn>
-          </v-card-actions>
-        </v-card>
-      </v-col>
+      <v-row v-if="!hand">
+        <span class="text-h5">{{ 'You have an empty hand' }}</span>
+      </v-row>
+      <v-row v-else class="mt-3">
+        <v-row class="text-h6 ml-3">{{ 'Your hand' }}</v-row>
+        <v-col v-for="card of hand" :key="card">
+          <v-card outlined width="100px" height="150px">
+            <v-card-title>{{ card }}</v-card-title>
+            <v-card-actions>
+              <v-spacer />
+              <v-btn outlined rounded text @click="play(card)">
+                {{ 'Play' }}
+              </v-btn>
+            </v-card-actions>
+          </v-card>
+        </v-col>
+      </v-row>
     </v-row>
     <v-row v-if="hasGame">
       <v-col cols="10">
         <v-item-group v-if="currentGame && currentGame.players">
-          <v-subheader>Players</v-subheader>
+          <v-subheader>{{ 'Players' }}</v-subheader>
           <v-item v-for="player of currentGame.players" :key="player.id">
             <v-chip class="ml-2"> Player {{ player.username }} </v-chip>
           </v-item>
         </v-item-group>
       </v-col>
-      <v-col cols="2" v-if="!currentGame.started">
+      <v-col
+        cols="2"
+        v-if="!currentGame.started && currentGame.players.length > 1"
+      >
         <v-btn
           id="start-lobby"
           color="primary"
@@ -107,7 +138,7 @@
         </v-btn>
       </v-col>
     </v-row>
-    <span class="headline"> Messages </span>
+    <span class="text-h6"> Messages </span>
     <v-row class="mt-2">
       <v-simple-table v-if="isDevMode && messages" class="messages">
         <template v-slot:default>
@@ -138,8 +169,8 @@
       </v-simple-table>
     </v-row>
     <v-snackbar
-      v-if="currentGame && currentGame.started"
-      :value="currentGame && currentGame.started"
+      v-if="isStarted"
+      :value="isStarted"
       :timeout="5 * 1000"
       top
       right
@@ -147,8 +178,17 @@
       {{ 'Game has started' }}
     </v-snackbar>
     <v-snackbar
-      v-if="currentGame && currentGame.gameOver"
-      :value="currentGame && currentGame.gameOver"
+      v-if="didLevelUp"
+      :value="didLevelUp"
+      :timeout="5 * 1000"
+      top
+      right
+    >
+      {{ `Level ${currentGame.currentLevel}` }}
+    </v-snackbar>
+    <v-snackbar
+      v-if="isGameOver"
+      :value="isGameOver"
       :timeout="5 * 1000"
       top
       right
@@ -197,6 +237,18 @@ export default {
     },
     isDevMode() {
       return process.env.NODE_ENV !== 'production';
+    },
+    didLevelUp() {
+      return this.currentGame && this.currentGame.levelUp;
+    },
+    isStarted() {
+      return this.currentGame && this.currentGame.started;
+    },
+    isGameOver() {
+      return this.currentGame && this.currentGame.gameOver;
+    },
+    hand() {
+      return (this.currentPlayer && this.currentPlayer.hand) || [];
     },
   },
   //TODO: Move all this in to a vuex component.... Breaks it up a little bit.
@@ -270,38 +322,31 @@ export default {
     },
     subscribeToLobby(message) {
       const thiz = this;
-      thiz.addMessage(message);
+      this.addMessage(message);
       if (!message || !message.body) {
         return;
       }
-      thiz.currentGame = JSON.parse(message.body);
+      this.currentGame = JSON.parse(message.body);
       this.stompClient.subscribe(this.currentLobbyDestination, (message) => {
-        const body = JSON.parse(message.body);
-        const previousGame = thiz.currentGame;
-        thiz.currentGame = body.data; //TODO: Maybe make more specific actions...
-        if (thiz.currentGame && thiz.currentGame.players) {
-          const currentPlayer = thiz.currentGame.players.find(
-            (p) => p && p.id === thiz.currentPlayer.id
-          );
-          if (currentPlayer) {
-            thiz.currentPlayer = currentPlayer;
-          }
-        }
-        if (
-          previousGame &&
-          previousGame.isNotStarted &&
-          thiz.currentGame.isStarted
-        ) {
-          console.log('Game is started.... :D');
-        }
         thiz.addMessage(message);
+        const body = JSON.parse(message.body);
+        thiz.currentGame = body.data; //TODO: Maybe make more specific actions...
+        if (!thiz.currentGame) {
+          return;
+        }
+        const currentPlayer = thiz.currentGame.players.find(
+          (p) => p && p.id === thiz.currentPlayer.id
+        );
+        if (currentPlayer) {
+          thiz.currentPlayer = currentPlayer;
+        }
       });
     },
     getMessage(message) {
       let val = 'Unable to find message';
       if (message && message.body) {
         const obj = JSON.parse(message.body);
-        val = obj ? obj.message : 'Unable to find message';
+        val = (obj && obj.message) || 'Unable to find message';
       }
       return val;
     },
@@ -318,6 +363,7 @@ export default {
 };
 </script>
 <style lang="scss">
+// TODO: Make style sheets.
 .messages {
   overflow-y: scroll;
   height: 50%;
