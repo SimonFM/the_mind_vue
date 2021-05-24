@@ -1,0 +1,32 @@
+.game {
+  max-width: 80vw !important;
+  max-height: 100vh !important;
+
+  &__controls {
+    // height: 20vh;
+  }
+
+  &__info {
+    height: 20vh;
+  }
+
+  &__hand {
+    width: 100%;
+    overflow-x: scroll;
+
+    &__empty {
+      height: 60px;
+    }
+  }
+
+  &__table {
+    // height: 20vh;
+  }
+
+  &__players {
+    &__list {
+      height: 50vh;
+      overflow-y: scroll;
+    }
+  }
+}

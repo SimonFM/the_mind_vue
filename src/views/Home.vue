@@ -1,8 +1,8 @@
 <template>
-  <v-container>
+  <v-container class="game">
+    <game-players />
     <game-info />
     <game-controls />
-    <game-players />
     <game-table />
     <player-hand />
     <message-table />
@@ -49,14 +49,14 @@
 </template>
 
 <script>
-import { mapActions, mapGetters } from 'vuex';
-import GameControls from '../components/GameControls.vue';
+import { mapActions, mapGetters } from 'vuex'
+import GameControls from '../components/GameControls.vue'
 
-import GameInfo from '../components/GameInfo.vue';
-import GamePlayers from '../components/GamePlayers.vue';
-import GameTable from '../components/GameTable.vue';
-import PlayerHand from '../components/PlayerHand.vue';
-import MessageTable from '../components/MessageTable.vue';
+import GameInfo from '../components/GameInfo.vue'
+import GamePlayers from '../components/GamePlayers.vue'
+import GameTable from '../components/GameTable.vue'
+import PlayerHand from '../components/PlayerHand.vue'
+import MessageTable from '../components/MessageTable.vue'
 
 export default {
   name: 'Home',
@@ -66,7 +66,7 @@ export default {
     PlayerHand,
     GamePlayers,
     GameControls,
-    MessageTable,
+    MessageTable
   },
   data() {
     return {
@@ -74,37 +74,37 @@ export default {
         {
           id: 'game-over',
           getMessage: () => {
-            return 'GAME OVER';
+            return 'GAME OVER'
           },
           activate: () => {
-            return this.isGameOver;
-          },
+            return this.isGameOver
+          }
         },
         {
           id: 'game-is-started',
           getMessage: () => {
-            return 'Game has started';
+            return 'Game has started'
           },
           activate: () => {
-            return this.isGameStarted;
-          },
+            return this.isGameStarted
+          }
         },
         {
           id: 'level-up',
           getMessage: () => {
-            return `Level ${
-              (this.hasCurrentGame && this.currentGame.currentLevel) || -1
-            }`;
+            return `Level ${(this.hasCurrentGame &&
+              this.currentGame.currentLevel) ||
+              -1}`
           },
           activate: () => {
-            return this.didGameLevelUp;
-          },
-        },
-      ],
-    };
+            return this.didGameLevelUp
+          }
+        }
+      ]
+    }
   },
   created() {
-    this.initGameLobbyConnections();
+    this.initGameLobbyConnections()
   },
   computed: {
     ...mapGetters([
@@ -112,11 +112,11 @@ export default {
       'isGameStarted',
       'didGameLevelUp',
       'currentGame',
-      'hasCurrentGame',
-    ]),
+      'hasCurrentGame'
+    ])
   },
   methods: {
-    ...mapActions(['initGameLobbyConnections']),
-  },
-};
+    ...mapActions(['initGameLobbyConnections'])
+  }
+}
 </script>

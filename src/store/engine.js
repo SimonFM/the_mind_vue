@@ -1,18 +1,18 @@
-import WebSocket from "@/api/websocket";
+import WebSocket from '@/api/websocket'
 
 const createDefaultState = () => {
   return {
     stompClient: WebSocket.getInstance(),
-    createGameCode: "",
-    joinGameCode: "",
+    createGameCode: '',
+    joinGameCode: '',
     currentPlayer: null,
     currentGame: null,
     messages: [],
     connected: false
-  };
-};
+  }
+}
 
-const state = createDefaultState();
+const state = createDefaultState()
 
 const getters = {
   lobbyClient: state => state.stompClient,
@@ -38,11 +38,11 @@ const getters = {
     state.currentGame.playedCards.length > 0,
   currentGameUrl: state => {
     if (!state.currentGame) {
-      return "";
+      return ''
     }
-    return `/user/topic/game/${state.currentGame.id}`;
+    return `/user/topic/game/${state.currentGame.id}`
   },
-  gameCode: state => (state.currentGame && state.currentGame.name) || "None",
+  gameCode: state => (state.currentGame && state.currentGame.name) || 'None',
   isGameOver: state => state.currentGame && state.currentGame.gameOver,
   isGameStarted: state => state.currentGame && state.currentGame.started,
   didGameLevelUp: state => state.currentGame && state.currentGame.levelUp,
@@ -51,163 +51,163 @@ const getters = {
     (state.currentGame && state.currentGame.ninjaStars) || -1,
 
   playerName: state =>
-    (state.currentPlayer && state.currentPlayer.username) || "None",
+    (state.currentPlayer && state.currentPlayer.username) || 'None',
   playerHand: state => (state.currentPlayer && state.currentPlayer.hand) || []
-};
+}
 
 const actions = {
   initGameLobbyConnections({ getters, commit, dispatch }) {
-    const client = getters.lobbyClient;
+    const client = getters.lobbyClient
 
     client.connect({}, () => {
-      commit("setConnected", true);
-      dispatch("setupConnectedChannel");
-      dispatch("setupDisconnectedChannel");
-      dispatch("setupJoinChannel");
-      dispatch("setupCreateChannel");
-      dispatch("setupMessagesChannel");
-      dispatch("connect");
-    });
+      commit('setConnected', true)
+      dispatch('setupConnectedChannel')
+      dispatch('setupDisconnectedChannel')
+      dispatch('setupJoinChannel')
+      dispatch('setupCreateChannel')
+      dispatch('setupMessagesChannel')
+      dispatch('connect')
+    })
   },
   connect({ dispatch }) {
-    dispatch("sendMessage", { url: "/app/game/connect", payload: null });
+    dispatch('sendMessage', { url: '/app/game/connect', payload: null })
   },
   setupConnectedChannel({ getters, commit, dispatch }) {
-    const client = getters.lobbyClient;
-    client.subscribe("/user/topic/game/connected", message => {
+    const client = getters.lobbyClient
+    client.subscribe('/user/topic/game/connected', message => {
       if (!message || !message.body) {
-        return;
+        return
       }
-      commit("setCurrentPlayer", JSON.parse(message.body));
-      dispatch("addMessage", message);
-    });
+      commit('setCurrentPlayer', JSON.parse(message.body))
+      dispatch('addMessage', message)
+    })
   },
   disconnect({ getters, dispatch }) {
-    const client = getters.lobbyClient;
-    dispatch("sendMessage", { url: "/app/game/disconnect", payload: {} });
+    const client = getters.lobbyClient
+    dispatch('sendMessage', { url: '/app/game/disconnect', payload: {} })
     if (client) {
-      client.disconnect();
+      client.disconnect()
     }
   },
   setupDisconnectedChannel({ getters, dispatch }) {
-    const client = getters.lobbyClient;
-    client.subscribe("/user/topic/game/disconnected", message => {
-      dispatch("clearCurrentPlayer");
-      dispatch("addMessage", message);
-    });
+    const client = getters.lobbyClient
+    client.subscribe('/user/topic/game/disconnected', message => {
+      dispatch('clearCurrentPlayer')
+      dispatch('addMessage', message)
+    })
   },
   join({ dispatch }, code) {
-    dispatch("sendMessage", {
-      url: "/app/game/join",
+    dispatch('sendMessage', {
+      url: '/app/game/join',
       payload: { invite: code }
-    });
+    })
   },
   setupJoinChannel({ getters, dispatch }) {
-    const client = getters.lobbyClient;
-    client.subscribe("/user/topic/game/join", async message => {
-      await dispatch("subscriptionToLobby", message);
+    const client = getters.lobbyClient
+    client.subscribe('/user/topic/game/join', async message => {
+      await dispatch('subscriptionToLobby', message)
       client.subscribe(getters.currentGameUrl, message => {
         if (!message || !message.body) {
-          return;
+          return
         }
-        dispatch("subscriptionToLobby", message);
-      });
-    });
+        dispatch('subscriptionToLobby', message)
+      })
+    })
   },
   create({ dispatch }, name) {
-    dispatch("sendMessage", { url: "/app/game/create", payload: { name } });
+    dispatch('sendMessage', { url: '/app/game/create', payload: { name } })
   },
   setupCreateChannel({ getters, dispatch }) {
-    const client = getters.lobbyClient;
-    client.subscribe("/user/topic/game/create", async message => {
-      await dispatch("subscriptionToLobby", message);
+    const client = getters.lobbyClient
+    client.subscribe('/user/topic/game/create', async message => {
+      await dispatch('subscriptionToLobby', message)
       client.subscribe(getters.currentGameUrl, message => {
         if (!message || !message.body) {
-          return;
+          return
         }
-        dispatch("subscriptionToLobby", message);
-      });
-    });
+        dispatch('subscriptionToLobby', message)
+      })
+    })
   },
   start({ getters, dispatch }) {
     if (!getters.hasCurrentGame) {
-      return;
+      return
     }
-    const currentGame = getters.currentGame;
-    dispatch("sendMessage", {
-      url: "/app/game/start",
+    const currentGame = getters.currentGame
+    dispatch('sendMessage', {
+      url: '/app/game/start',
       payload: { roomName: currentGame.name }
-    });
+    })
   },
   play({ getters, dispatch }, card) {
     if (!getters.hasCurrentGame) {
-      return;
+      return
     }
-    const currentGame = getters.currentGame;
-    dispatch("sendMessage", {
-      url: "/app/game/card",
+    const currentGame = getters.currentGame
+    dispatch('sendMessage', {
+      url: '/app/game/card',
       payload: { roomName: currentGame.name, data: card }
-    });
+    })
   },
   setupMessagesChannel({ getters, dispatch }) {
-    const client = getters.lobbyClient;
-    client.subscribe("/user/topic/game/messages", message => {
+    const client = getters.lobbyClient
+    client.subscribe('/user/topic/game/messages', message => {
       if (!message || !message.body) {
-        return;
+        return
       }
-      dispatch("addMessage", message);
-    });
+      dispatch('addMessage', message)
+    })
   },
   subscriptionToLobby({ getters, dispatch, commit }, message) {
-    dispatch("addMessage", message);
+    dispatch('addMessage', message)
 
-    let body = JSON.parse(message.body);
-    let currentGame = null;
+    let body = JSON.parse(message.body)
+    let currentGame = null
     if (body && body.data) {
-      currentGame = body.data;
+      currentGame = body.data
     }
     if (body && !body.data) {
-      currentGame = body;
+      currentGame = body
     }
-    commit("setCurrentGame", currentGame);
+    commit('setCurrentGame', currentGame)
     if (!currentGame || !currentGame.players) {
-      return;
+      return
     }
-    const currentPlayer = getters.currentPlayer;
+    const currentPlayer = getters.currentPlayer
     const newCurrentPlayer = currentGame.players.find(
       p => p && p.id === currentPlayer.id
-    );
+    )
     if (newCurrentPlayer) {
-      commit("setCurrentPlayer", newCurrentPlayer);
+      commit('setCurrentPlayer', newCurrentPlayer)
     }
   },
   sendMessage({ getters }, { url, payload }) {
-    const client = getters.lobbyClient;
-    client.send(url, JSON.stringify(payload));
+    const client = getters.lobbyClient
+    client.send(url, JSON.stringify(payload))
   },
   clearCurrentPlayer({ commit }) {
-    commit("setCurrentPlayer", null);
+    commit('setCurrentPlayer', null)
   },
   clearCurrentGame({ commit }) {
-    commit("setCurrentGame", null);
+    commit('setCurrentGame', null)
   }
-};
+}
 
 const mutations = {
   setConnected(state, isConnected) {
-    state.connected = isConnected;
+    state.connected = isConnected
   },
   setCurrentPlayer(state, currentPlayer) {
-    state.currentPlayer = currentPlayer;
+    state.currentPlayer = currentPlayer
   },
   setCurrentGame(state, currentGame) {
-    state.currentGame = currentGame;
+    state.currentGame = currentGame
   }
-};
+}
 
 export default {
   state,
   getters,
   actions,
   mutations
-};
+}
